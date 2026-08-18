@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed typing being broken on Flutter Web when semantics is enabled (e.g. `SemanticsBinding.instance.ensureSemantics()`, a screen reader, or Tab navigation) by publishing a text-field semantics node on the editor so the web engine creates and attaches its editable DOM element ([#2531](https://github.com/singerdmx/flutter-quill/issues/2531)).
+
 ## [11.6.0] - 2026-09-16
 
 ### Added
