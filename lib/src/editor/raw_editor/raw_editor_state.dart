@@ -6,7 +6,8 @@ import 'dart:ui' as ui hide TextStyle;
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderAbstractViewport;
+import 'package:flutter/rendering.dart'
+    show RenderAbstractViewport, RenderProxyBox, SemanticsConfiguration;
 import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility_temp_fork/flutter_keyboard_visibility_temp_fork.dart'
@@ -429,16 +430,17 @@ class QuillRawEditorState extends EditorState
       // while this node reports focus. [_handleFocusChanged] rebuilds to sync.
       focused: _hasFocus,
       // The child semantics are excluded below, so expose the text and caret
-      // here for screen readers.
+      // on this node for screen readers.
       value: textEditingValue.text,
-      textSelection: textEditingValue.selection,
       onFocus: () => widget.config.focusNode.requestFocus(),
       onSetSelection: _semanticsSetSelection,
       onSetText: _semanticsSetText,
       // Make this the single text-field leaf, otherwise an inner focusable
       // descendant steals the click before it reaches the editable element.
-      excludeSemantics: true,
-      child: child,
+      child: _SemanticsTextSelection(
+        selection: textEditingValue.selection,
+        child: ExcludeSemantics(child: child),
+      ),
     );
   }
 
@@ -1502,4 +1504,46 @@ class QuillRawEditorState extends EditorState
 
   @override
   bool get shareEnabled => false;
+}
+
+/// Merges [selection] into the enclosing text-field semantics node; the
+/// [Semantics] widget has no parameter for it.
+class _SemanticsTextSelection extends SingleChildRenderObjectWidget {
+  const _SemanticsTextSelection({required this.selection, super.child});
+
+  final TextSelection selection;
+
+  @override
+  _RenderSemanticsTextSelection createRenderObject(BuildContext context) =>
+      _RenderSemanticsTextSelection(selection);
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderSemanticsTextSelection renderObject,
+  ) {
+    renderObject.selection = selection;
+  }
+}
+
+class _RenderSemanticsTextSelection extends RenderProxyBox {
+  _RenderSemanticsTextSelection(this._selection);
+
+  TextSelection _selection;
+
+  set selection(TextSelection value) {
+    if (value == _selection) {
+      return;
+    }
+    _selection = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    if (_selection.isValid) {
+      config.textSelection = _selection;
+    }
+  }
 }
