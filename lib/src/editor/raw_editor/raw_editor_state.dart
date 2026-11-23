@@ -428,6 +428,10 @@ class QuillRawEditorState extends EditorState
       // The activation lever: the engine attaches its editable element only
       // while this node reports focus. [_handleFocusChanged] rebuilds to sync.
       focused: _hasFocus,
+      // The child semantics are excluded below, so expose the text and caret
+      // here for screen readers.
+      value: textEditingValue.text,
+      textSelection: textEditingValue.selection,
       onFocus: () => widget.config.focusNode.requestFocus(),
       onSetSelection: _semanticsSetSelection,
       onSetText: _semanticsSetText,
